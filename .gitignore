@@ -1,0 +1,84 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+*.so
+pip-wheel-metadata/
+
+# venv / uv / pip
+.venv/
+venv/
+env/
+.uv/
+uv.lock.bak
+pip-log.txt
+
+# 测试 / 类型 / lint 缓存
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+.tox/
+.nox/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 环境变量（保留 .env.example 进库）
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 项目运行时产物
+logs/
+*.log
+traces/
+runs/
+.cache/
+tmp/
+.tmp/
+# examples 跑出来的临时 workspace
+workspace_demo/
+examples/workspace_*/
+examples/**/trace.json
+
+# 数据库 / 持久化
+*.db
+*.sqlite
+*.sqlite3
+
+# CodeBuddy / Claude / Codex 等本地工作目录（按需保留）
+.codebuddy/
+.claude/
+.codex/
+
+# Node（如果以后前端引入）
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# 根目录速记 HTML（非正式文档；docs/ 下的保留）
+/*.html
+!/docs/*.html
+yarn-error.log*

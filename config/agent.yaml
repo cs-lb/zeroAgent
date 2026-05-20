@@ -1,0 +1,67 @@
+# zeroAgent 配置
+# - 通过 ${ENV_VAR} 引用环境变量（自动从 .env 加载）
+# - DeepSeek 当前两款主力模型：v4-flash（轻量快速）/ v4-pro（旗舰）
+#   兼容保留：deepseek-chat / deepseek-reasoner（2026/07/24 弃用，等价于 v4-flash）
+
+llm:
+  default: deepseek-v4-flash
+  providers:
+    # ============= DeepSeek 主力模型 =============
+
+    # v4-flash：日常对话 / 高频调用，性价比最高
+    deepseek-v4-flash:
+      type: openai_compatible
+      api_key: ${DEEPSEEK_API_KEY}
+      base_url: https://api.deepseek.com/v1
+      model: deepseek-v4-flash
+
+    # v4-flash + 思考模式：数学/编码/推理任务
+    deepseek-v4-flash-thinking:
+      type: openai_compatible
+      api_key: ${DEEPSEEK_API_KEY}
+      base_url: https://api.deepseek.com/v1
+      model: deepseek-v4-flash
+      extra:
+        thinking: { type: enabled }
+
+    # v4-pro：旗舰，复杂任务首选
+    deepseek-v4-pro:
+      type: openai_compatible
+      api_key: ${DEEPSEEK_API_KEY}
+      base_url: https://api.deepseek.com/v1
+      model: deepseek-v4-pro
+
+    # v4-pro + 高强度推理
+    deepseek-v4-pro-thinking:
+      type: openai_compatible
+      api_key: ${DEEPSEEK_API_KEY}
+      base_url: https://api.deepseek.com/v1
+      model: deepseek-v4-pro
+      extra:
+        thinking: { type: enabled }
+        reasoning_effort: high
+
+    # ============= 兼容保留（旧名） =============
+
+    # 等价于 v4-flash 非思考模式（2026/07/24 弃用）
+    deepseek-chat:
+      type: openai_compatible
+      api_key: ${DEEPSEEK_API_KEY}
+      base_url: https://api.deepseek.com/v1
+      model: deepseek-chat
+
+    # ============= 其他 Provider（按需启用） =============
+
+    # OpenAI 官方
+    openai-gpt4o:
+      type: openai_compatible
+      api_key: ${OPENAI_API_KEY}
+      base_url: https://api.openai.com/v1
+      model: gpt-4o-mini
+
+    # 本地 Ollama
+    local-qwen:
+      type: openai_compatible
+      api_key: ollama
+      base_url: http://127.0.0.1:11434/v1
+      model: qwen2.5:7b

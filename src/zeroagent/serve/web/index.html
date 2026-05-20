@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>zeroAgent · Chat</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🤖%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/assets/styles.css" />
+
+  <!-- Markdown：marked + DOMPurify -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+
+  <!-- 代码高亮：highlight.js（用浏览器构建，避免 UMD 探测 require 报错） -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css" />
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+
+  <!-- 数学公式：KaTeX + auto-render -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- 侧边栏：会话历史 -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🤖</div>
+        <div>
+          <div class="brand-name">zeroAgent</div>
+          <div class="brand-sub">v0.1.0</div>
+        </div>
+      </div>
+
+      <button class="new-chat" id="new-chat-btn">＋ 新对话</button>
+
+      <div class="section-title">历史会话</div>
+      <div class="conv-list" id="conv-list">
+        <div class="muted">暂无会话</div>
+      </div>
+
+      <div class="footer">
+        <a href="/healthz" target="_blank">健康检查</a>
+        <span>·</span>
+        <a href="/docs" target="_blank">API</a>
+      </div>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="chat">
+      <header class="chat-header">
+        <div class="header-title">
+          <span id="conv-title" contenteditable="true" spellcheck="false" title="点击修改标题">新对话</span>
+        </div>
+        <div class="header-actions">
+          <button id="clear-btn" title="清空当前对话内容">清空</button>
+        </div>
+      </header>
+
+      <div class="messages" id="messages">
+        <div class="empty-state">
+          <div class="empty-emoji">✨</div>
+          <div class="empty-title">开始与 zeroAgent 对话</div>
+          <div class="empty-sub">在下方选择模型并输入消息</div>
+          <div class="suggest-row">
+            <button class="suggest" data-text="你是谁？用一句话介绍。">你是谁</button>
+            <button class="suggest" data-text="解释一下 MCP 协议是什么">解释 MCP</button>
+            <button class="suggest" data-text="写一个 Python 装饰器，记录函数执行时间">写代码</button>
+            <button class="suggest" data-text="推导 $e^{i\pi} + 1 = 0$ 并解释欧拉公式">数学公式</button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="composer">
+        <div class="composer-inner">
+          <textarea
+            id="input"
+            placeholder="输入消息…   Enter 发送，Shift+Enter 换行"
+            rows="1"
+          ></textarea>
+          <button id="send-btn" class="send-btn" title="发送">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12l14-7-7 14-2-5-5-2z" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- 工具栏：模型下拉 + 参数 -->
+        <div class="composer-toolbar">
+          <div class="tool-group">
+            <div class="model-picker" id="model-picker">
+              <button class="model-btn" id="model-btn" type="button">
+                <span class="model-icon">✦</span>
+                <span class="model-label" id="model-label">选择模型</span>
+                <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+              <div class="model-menu" id="model-menu" hidden>
+                <div class="model-menu-title">内置模型</div>
+                <div class="model-menu-list" id="model-menu-list"></div>
+              </div>
+            </div>
+
+            <button class="tool-btn" id="tools-btn" type="button" title="启用工具调用（ReAct 循环）">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6a1.5 1.5 0 0 0 2.1 2.1l6-6a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.1-2.1 2.6-2.6z" stroke-linejoin="round"/>
+              </svg>
+              <span id="tools-btn-label">工具：关</span>
+            </button>
+
+            <button class="tool-btn" id="settings-btn" type="button" title="参数 / System Prompt">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              <span>参数</span>
+            </button>
+            <div class="settings-pop" id="settings-pop" hidden>
+              <div class="param-row">
+                <label for="temperature">Temperature</label>
+                <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" />
+                <span id="temp-val">0.7</span>
+              </div>
+              <div class="param-row">
+                <label for="stream-toggle">流式输出</label>
+                <input type="checkbox" id="stream-toggle" checked />
+              </div>
+              <div class="param-row col">
+                <label for="system-prompt">System Prompt</label>
+                <textarea id="system-prompt" rows="3" placeholder="留空则使用默认行为…"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-text" id="status-bar">就绪</div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- 工具调用审批弹层 -->
+  <div class="approval-overlay" id="approval-overlay" hidden>
+    <div class="approval-modal">
+      <div class="approval-head">
+        <span class="approval-icon">🔧</span>
+        <span>请求执行工具</span>
+      </div>
+      <div class="approval-body">
+        <div class="approval-row"><b>工具</b><code id="approval-tool"></code></div>
+        <div class="approval-row"><b>副作用</b><span id="approval-side"></span></div>
+        <div class="approval-row col">
+          <b>参数</b>
+          <pre id="approval-args"></pre>
+        </div>
+        <div class="approval-row col">
+          <b>说明</b>
+          <div class="approval-desc" id="approval-desc"></div>
+        </div>
+      </div>
+      <div class="approval-actions">
+        <button class="btn-secondary" id="approval-deny">拒绝</button>
+        <button class="btn-primary" id="approval-allow">允许此次</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>
