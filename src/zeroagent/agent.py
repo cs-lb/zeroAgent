@@ -147,6 +147,24 @@ class Agent:
     def register_tools(self, tools: list[Tool], *, override: bool = False) -> None:
         self._registry.register_many(tools, override=override)
 
+    def enable_code_explorer(self, *, max_steps: int = 12, override: bool = True) -> None:
+        """注册 `code_explorer` 子 Agent 工具。
+
+        子 Agent 复用当前 Provider，专做"agentic 代码检索"——主 Agent 上下文
+        不被几十次 grep/read 结果污染，只拿到子 Agent 的最终结论。
+
+        注意：必须在 `use_llm` 切到目标 Provider 后调用，否则子 Agent 会绑定
+        当前默认 Provider。需要换 Provider 时重新调用即可。
+        """
+        from zeroagent.tools.builtin.code_explorer import CodeExplorerTool
+
+        tool = CodeExplorerTool(
+            provider=self._get_provider(),
+            policy=self._policy,
+            default_max_steps=max_steps,
+        )
+        self._registry.register(tool, override=override)
+
     def use_policy(self, policy: Policy) -> None:
         self._policy = policy
 

@@ -110,7 +110,9 @@ async def test_fs_read_write_list(tmp_path: Path) -> None:
 
     read = FsReadTool()
     res = await read.invoke({"path": "a.txt"}, ctx)
-    assert res.content == "hello"
+    # 升级后输出带行号前缀，原文需出现在结果里
+    assert "hello" in res.content
+    assert res.metadata.get("total_lines") == 1
 
     ls = ListDirTool()
     res = await ls.invoke({"path": "."}, ctx)

@@ -42,7 +42,9 @@ from zeroagent.tools.builtin import default_builtin_tools
 from zeroagent.tools.policy import AsyncApprovalPolicy
 
 WEB_DIR = Path(__file__).parent / "web"
-SKILLS_DIR_DEFAULT = Path("skills")
+# 默认 skills 目录：相对于 config 文件所在的项目根，而不是进程 CWD，
+# 避免后端从其它目录启动时扫不到 skills。
+SKILLS_DIR_DEFAULT = "skills"
 
 
 # ---------- Schema ----------
@@ -141,13 +143,24 @@ def create_app(config_path: str | Path = "config/agent.yaml") -> FastAPI:
     agent.register_tools(
         default_builtin_tools(allow_write=True, allow_exec=True),
     )
-    # 加载 Skills（如果项目根有 skills 目录）
-    skills_dir = Path(os.environ.get("ZEROAGENT_SKILLS_DIR") or SKILLS_DIR_DEFAULT)
+    # 派生子 Agent 做代码检索（对标 Claude Code 的 Task 工具）
+    try:
+        agent.enable_code_explorer()
+    except Exception:  # noqa: BLE001 - 缺 provider key 等环境问题不应阻断启动
+        pass
+
+    # 加载 Skills：优先 env，其次项目根（config 同级父目录）下的 skills/
+    project_root = config_path.resolve().parent.parent
+    env_skills = os.environ.get("ZEROAGENT_SKILLS_DIR")
+    if env_skills:
+        skills_dir = Path(env_skills)
+    else:
+        skills_dir = project_root / SKILLS_DIR_DEFAULT
     skills_loaded = 0
     if skills_dir.exists():
         skills_loaded = agent.load_skills(skills_dir)
     # 工作区 = config 同级（或环境变量覆盖）
-    workspace = os.environ.get("ZEROAGENT_WORKSPACE") or str(config_path.parent.parent)
+    workspace = os.environ.get("ZEROAGENT_WORKSPACE") or str(project_root)
     agent.configure(workspace=workspace)
 
     # 锁，避免并发请求互踩 _current
