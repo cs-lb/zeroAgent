@@ -5,14 +5,24 @@ from zeroagent.tools.builtin.fs import FsReadTool, FsWriteTool, ListDirTool
 from zeroagent.tools.builtin.glob import GlobTool
 from zeroagent.tools.builtin.grep import GrepTool
 from zeroagent.tools.builtin.http import HttpGetTool
+from zeroagent.tools.builtin.opencli import OpenCliTool
 from zeroagent.tools.builtin.python_eval import PythonEvalTool
 
 
-def default_builtin_tools(*, allow_write: bool = False, allow_exec: bool = False) -> list:
+def default_builtin_tools(
+    *,
+    allow_write: bool = False,
+    allow_exec: bool = False,
+    allow_opencli: bool = False,
+) -> list:
     """返回一组安全默认工具。
 
     默认装备一套"代码检索"组合：fs_read + list_dir + grep + glob，
     对标 Claude Code 的 agentic search 能力，避免引入向量索引。
+
+    可选：
+        allow_opencli=True  额外挂上 OpenCliTool（只读模式，写操作走 Policy 审批）。
+                            需要本机已 `npm i -g @jackwener/opencli` 且装好 Chrome 扩展。
     """
     tools = [
         FsReadTool(),
@@ -25,6 +35,8 @@ def default_builtin_tools(*, allow_write: bool = False, allow_exec: bool = False
         tools.append(FsWriteTool())
     if allow_exec:
         tools.append(PythonEvalTool())
+    if allow_opencli:
+        tools.append(OpenCliTool())
     return tools
 
 
@@ -35,6 +47,7 @@ __all__ = [
     "GrepTool",
     "GlobTool",
     "HttpGetTool",
+    "OpenCliTool",
     "PythonEvalTool",
     "CodeExplorerTool",
     "default_builtin_tools",

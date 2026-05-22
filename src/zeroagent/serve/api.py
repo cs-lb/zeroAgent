@@ -141,7 +141,7 @@ def create_app(config_path: str | Path = "config/agent.yaml") -> FastAPI:
     agent = Agent.from_config(config_path)
     # 默认挂内置工具：read 直跑，write/exec 走 AsyncApprovalPolicy 弹审批
     agent.register_tools(
-        default_builtin_tools(allow_write=True, allow_exec=True),
+        default_builtin_tools(allow_write=True, allow_exec=True, allow_opencli=True),
     )
     # 派生子 Agent 做代码检索（对标 Claude Code 的 Task 工具）
     try:
